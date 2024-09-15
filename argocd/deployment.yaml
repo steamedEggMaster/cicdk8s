@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cicdk8s-main
+  namespace: cicdk8s
+  labels:
+    app: cicdk8s-main
+    service: cicdk8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cicdk8s-main
+      service: cicdk8s
+  template:
+    metadata:
+      labels:
+        app: cicdk8s-main
+        service: cicdk8s
+    spec:
+      containers:
+        - name: cicdk8s-main
+          image: springboothate/secondchance
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: log-volume
+              mountPath: /var/log/flow
+      tolerations:
+        - key: "instance_type"
+          operator: "Equal"
+          value: "spot"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: team
+                    operator: In
+                    values:
+                      - devops
+      volumes:
+        - name: log-volume
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cicdk8s-main-service
+  namespace: cicdk8s
+spec:
+  selector:
+    app: cicdk8s-main
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
